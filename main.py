@@ -81,10 +81,10 @@ def train(model, data_loader, optimizer, epoch, writer):
 
         # TensorBoard logging
         # 1) Log the scalar values
-        writer.add_scalar('train/total_loss', loss.data[0], global_step)
-        writer.add_scalar('train/margin_loss', margin_loss.data[0], global_step)
+        writer.add_scalar('train/total_loss', loss.item(), global_step)
+        writer.add_scalar('train/margin_loss', margin_loss.item(), global_step)
         if args.use_reconstruction_loss:
-            writer.add_scalar('train/reconstruction_loss', recon_loss.data[0], global_step)
+            writer.add_scalar('train/reconstruction_loss', recon_loss.item(), global_step)
         writer.add_scalar('train/batch_accuracy', acc, global_step)
         writer.add_scalar('train/accuracy', epoch_avg_acc, global_step)
 
@@ -108,9 +108,9 @@ def train(model, data_loader, optimizer, epoch, writer):
                 args.epochs,
                 global_step,
                 total_step,
-                loss.data[0],
-                margin_loss.data[0],
-                recon_loss.data[0] if args.use_reconstruction_loss else 0,
+                loss.item(),
+                margin_loss.item(),
+                recon_loss.item() if args.use_reconstruction_loss else 0,
                 acc,
                 epoch_avg_acc))
 
@@ -152,7 +152,9 @@ def test(model, data_loader, num_train_batches, epoch, writer):
         target_one_hot = utils.one_hot_encode(target_indices, length=args.num_classes)
         assert target_one_hot.size() == torch.Size([batch_size, 10])
 
-        data, target = Variable(data, volatile=True), Variable(target_one_hot)
+        # data, target = Variable(data, volatile=True), Variable(target_one_hot)
+        data.requires_grad_(False)
+        target = target_one_hot.clone()
 
         if args.cuda:
             data = data.cuda()
@@ -203,7 +205,7 @@ def test(model, data_loader, num_train_batches, epoch, writer):
     # Log test accuracies
     num_test_data = len(data_loader.dataset)
     accuracy = correct / num_test_data
-    accuracy_percentage = 100. * accuracy
+    accuracy_percentage = 100.0 * accuracy
 
     # TensorBoard logging
     # 1) Log the scalar values
@@ -220,7 +222,7 @@ def test(model, data_loader, num_train_batches, epoch, writer):
             loss,
             margin_loss,
             recon_loss if args.use_reconstruction_loss else 0))
-    print('Test Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('Test Accuracy: {}/{} ({:.6f}%)\n'.format(
         correct, num_test_data, accuracy_percentage))
 
 
